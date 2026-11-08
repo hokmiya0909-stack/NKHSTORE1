@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parcel Tracking</title>
+<style>
+  *{box-sizing:border-box} body{margin:0;background:#f3f5f8;color:#182230;font-family:Arial,Helvetica,sans-serif}
+  .wrap{max-width:720px;margin:28px auto;padding:16px}
+  .card{background:#fff;border:1px solid #e4e8ee;border-radius:16px;padding:22px;margin-bottom:16px;box-shadow:0 4px 18px rgba(20,35,55,.05)}
+  h1{font-size:25px;margin:0 0 7px} h2{font-size:17px;margin:0 0 16px}
+  .muted{color:#697586;font-size:14px}.pill{display:inline-block;background:#e9f3ff;color:#1764ad;border-radius:30px;padding:7px 12px;font-size:13px;font-weight:700}
+  .product{display:flex;gap:14px;align-items:center}.product-icon{width:66px;height:66px;border-radius:12px;background:#eef1f5;display:grid;place-items:center;font-size:30px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.label{font-size:12px;color:#697586;margin-bottom:5px}.value{font-size:15px;font-weight:700}
+  .bar{height:9px;background:#e8edf3;border-radius:20px;overflow:hidden;margin:14px 0 8px}.fill{height:100%;background:#2776c7;border-radius:20px;width:0}
+  .step{display:flex;gap:12px;position:relative;padding:0 0 18px}.dot{width:13px;height:13px;border-radius:50%;background:#d5dce5;margin-top:3px;flex:none;z-index:1}.step.done .dot{background:#2477c8}.step.current .dot{background:#2477c8;box-shadow:0 0 0 4px #e2effc}
+  .step:not(:last-child):before{content:"";position:absolute;left:6px;top:16px;bottom:0;width:2px;background:#e1e6ed}.step.done:not(:last-child):before{background:#8bb9e7}
+  .step strong{font-size:14px}.step small{display:block;color:#697586;margin-top:4px;font-size:12px}
+  .notice{background:#fff8e8;border:1px solid #f2dfad;color:#765719;border-radius:10px;padding:12px;font-size:12px;line-height:1.5}
+  @media(max-width:480px){.grid{grid-template-columns:1fr 1fr}.card{padding:18px}.wrap{margin:10px auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Parcel tracking</h1>
+    <p class="muted">Shipment progress overview</p>
+    <span class="pill" id="status">Updating status…</span><p class="muted" id="today" style="margin:10px 0 0"></p>
+    <div class="bar"><div class="fill" id="progress"></div></div>
+    <div class="muted" id="progressText">0% complete</div>
+  </div>
+  <div class="card">
+    <div class="product">
+      <div class="product-icon">📱</div>
+      <div><h2 style="margin-bottom:5px">Xiaomi 13 Ultra Phone Case</h2><div class="muted">Product in this shipment</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Shipment details</h2>
+    <div class="grid">
+      <div><div class="label">Tracking number</div><div class="value">X13U-0514</div></div>
+      <div><div class="label">Estimated delivery</div><div class="value">Nov 5–14, 2026</div></div>
+      <div><div class="label">From</div><div class="value">China 🇨🇳</div></div>
+      <div><div class="label">To</div><div class="value">Cambodia 🇰🇭</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Tracking history</h2>
+    <div id="timeline"></div>
+  </div>
+  <div class="notice"><strong>Demo tracking page:</strong> Statuses update automatically according to the calendar date. They are scheduled milestones, not live courier scans, and do not confirm the parcel’s actual location or delivery.</div>
+</div>
+<script>
+const milestones = [
+  ["Order confirmed","Nov 4, 2026"],
+  ["Order shipped","Nov 5, 2026"],
+  ["Departed China","Nov 7, 2026"],
+  ["In transit","Nov 8, 2026"],
+  ["Arrived in Cambodia","Nov 11, 2026"],
+  ["Customs processing","Nov 12, 2026"],
+  ["Out for delivery","Nov 13, 2026"],
+  ["Delivered","Nov 14, 2026"]
+];
+const dates = milestones.map(x => new Date(x[1] + "T00:00:00"));
+function update(){
+  const now = new Date();
+  document.getElementById("today").textContent = "Today: " + now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let active = -1;
+  milestones.forEach((m,i)=>{if(today>=dates[i]) active=i;});
+  const status = active < 0 ? "Order confirmed" : milestones[active][0];
+  document.getElementById("status").textContent = status;
+  const start = new Date("Nov 5, 2026T00:00:00");
+  const end = new Date("Nov 14, 2026T00:00:00");
+  const pct = Math.max(0, Math.min(100, Math.round(((today-start)/(end-start))*100)));
+  document.getElementById("progress").style.width = pct + "%";
+  document.getElementById("progressText").textContent = pct + "% timeline progress";
+  const timeline = document.getElementById("timeline");
+  timeline.innerHTML = "";
+  milestones.forEach((m,i)=>{
+    const el=document.createElement("div");
+    el.className="step"+(i<active?" done":i===active?" current":"");
+    const dateLabel = dates[i].toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+    el.innerHTML='<span class="dot"></span><div><strong></strong><small></small></div>';
+    el.querySelector("strong").textContent=m[0];
+    el.querySelector("small").textContent=dateLabel + (i===active ? " · Current stage" : i<active ? " · Completed" : " · Upcoming");
+    timeline.appendChild(el);
+  });
+}
+update();
+setInterval(update, 60*60*1000);
+</script>
+</body>
+</html>
